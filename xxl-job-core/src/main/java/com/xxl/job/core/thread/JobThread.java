@@ -204,7 +204,9 @@ public class JobThread extends Thread {
 					// callback handler info
 					if (!toStop) {
 						// commonm
-						TriggerCallbackThread.pushCallBack(new HandleCallbackParam(triggerParam.getLogId(), triggerParam.getLogDateTime(), executeResult));
+						// 执行完成后回调调度器
+						TriggerCallbackThread.pushCallBack(
+								new HandleCallbackParam(triggerParam.getLogId(), triggerParam.getLogDateTime(), executeResult));
 					} else {
 						// is killed
 						ReturnT<String> stopResult = new ReturnT<String>(ReturnT.FAIL_CODE, stopReason + " [job running, killed]");
@@ -223,6 +225,7 @@ public class JobThread extends Thread {
 				// is killed
 				ReturnT<String> stopResult =
 						new ReturnT<String>(ReturnT.FAIL_CODE, stopReason + " [job not executed, in the job queue, killed.]");
+				//回调
 				TriggerCallbackThread
 						.pushCallBack(new HandleCallbackParam(triggerParam.getLogId(), triggerParam.getLogDateTime(), stopResult));
 			}

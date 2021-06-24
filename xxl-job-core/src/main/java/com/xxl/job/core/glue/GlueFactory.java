@@ -37,6 +37,7 @@ public class GlueFactory {
 	private ConcurrentMap<String, Class<?>> CLASS_CACHE = new ConcurrentHashMap<>();
 
 	/**
+	 * 通过源码获取handler
 	 * load new instance, prototype
 	 *
 	 * @param codeSource
@@ -50,7 +51,9 @@ public class GlueFactory {
 				Object instance = clazz.newInstance();
 				if (instance!=null) {
 					if (instance instanceof IJobHandler) {
+						//注入引用
 						this.injectService(instance);
+						//返回
 						return (IJobHandler) instance;
 					} else {
 						throw new IllegalArgumentException(">>>>>>>>>>> xxl-glue, loadNewInstance error, "
@@ -68,7 +71,8 @@ public class GlueFactory {
 			String md5Str = new BigInteger(1, md5).toString(16);
 
 			Class<?> clazz = CLASS_CACHE.get(md5Str);
-			if(clazz == null){
+			if (clazz == null) {
+				// 解析为class对象
 				clazz = groovyClassLoader.parseClass(codeSource);
 				CLASS_CACHE.putIfAbsent(md5Str, clazz);
 			}

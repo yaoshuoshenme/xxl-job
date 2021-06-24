@@ -26,6 +26,7 @@ public class MethodJobHandler extends IJobHandler {
 
     @Override
     public ReturnT<String> execute(String param) throws Exception {
+        //反射调方法
         return (ReturnT<String>) method.invoke(target, new Object[]{param});
     }
 

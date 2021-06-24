@@ -55,7 +55,7 @@ public class ExecutorBizImpl implements ExecutorBiz {
         // 获取任务接入类型
         GlueTypeEnum glueTypeEnum = GlueTypeEnum.match(triggerParam.getGlueType());
 
-        //bean类型
+        //bean类型 => 从入参加载handler
         if (GlueTypeEnum.BEAN == glueTypeEnum) {
 
             // new jobhandler
@@ -94,7 +94,9 @@ public class ExecutorBizImpl implements ExecutorBiz {
             // valid handler
             if (jobHandler == null) {
                 try {
+                    //通过Groovy实例化出handler
                     IJobHandler originJobHandler = GlueFactory.getInstance().loadNewInstance(triggerParam.getGlueSource());
+                    //包转一下记录代码更新时间
                     jobHandler = new GlueJobHandler(originJobHandler, triggerParam.getGlueUpdatetime());
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);

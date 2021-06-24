@@ -23,6 +23,7 @@ public class JFinalCoreConfig extends JFinalConfig {
 	private void initXxlJobExecutor() {
 
 		// registry jobhandler
+		// 注册handler bean
 		XxlJobExecutor.registJobHandler("demoJobHandler", new DemoJobHandler());
 		XxlJobExecutor.registJobHandler("shardingJobHandler", new ShardingJobHandler());
 		XxlJobExecutor.registJobHandler("httpJobHandler", new HttpJobHandler());
@@ -32,6 +33,7 @@ public class JFinalCoreConfig extends JFinalConfig {
 		Prop xxlJobProp = PropKit.use("xxl-job-executor.properties");
 
 		// init executor
+		//初始化执行器?
 		xxlJobExecutor = new XxlJobExecutor();
 		xxlJobExecutor.setAdminAddresses(xxlJobProp.get("xxl.job.admin.addresses"));
 		xxlJobExecutor.setAccessToken(xxlJobProp.get("xxl.job.accessToken"));
@@ -44,6 +46,7 @@ public class JFinalCoreConfig extends JFinalConfig {
 		xxlJobExecutor.setLogRetentionDays(xxlJobProp.getInt("xxl.job.executor.logretentiondays"));
 
 		// start executor
+		// 启动执行器
 		try {
 			xxlJobExecutor.start();
 		} catch (Exception e) {

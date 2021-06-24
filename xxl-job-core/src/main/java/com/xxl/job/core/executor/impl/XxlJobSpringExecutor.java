@@ -20,6 +20,8 @@ import java.util.Map;
 
 
 /**
+ * 执行器端
+ * 执行器初始化
  * xxl-job executor (for spring)
  *
  * @author xuxueli 2018-11-01 09:24:52
@@ -36,6 +38,8 @@ public class XxlJobSpringExecutor extends XxlJobExecutor implements ApplicationC
         /*initJobHandlerRepository(applicationContext);*/
 
         // init JobHandler Repository (for method)
+        // 初始化Method jobHandler
+        // 逻辑：获取所有bean, 遍历方法，过滤xxljob注解
         initJobHandlerMethodRepository(applicationContext);
 
         // refresh GlueFactory
@@ -43,6 +47,7 @@ public class XxlJobSpringExecutor extends XxlJobExecutor implements ApplicationC
 
         // super start
         try {
+            //启动
             super.start();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -83,6 +88,7 @@ public class XxlJobSpringExecutor extends XxlJobExecutor implements ApplicationC
             return;
         }
         // init job handler from method
+        // 扫描通过注解方法的handler
         String[] beanDefinitionNames = applicationContext.getBeanNamesForType(Object.class, false, true);
         for (String beanDefinitionName : beanDefinitionNames) {
             Object bean = applicationContext.getBean(beanDefinitionName);
@@ -114,11 +120,13 @@ public class XxlJobSpringExecutor extends XxlJobExecutor implements ApplicationC
                 if (name.trim().length() == 0) {
                     throw new RuntimeException("xxl-job method-jobhandler name invalid, for[" + bean.getClass() + "#" + method.getName() + "] .");
                 }
+                //是否已加载
                 if (loadJobHandler(name) != null) {
                     throw new RuntimeException("xxl-job jobhandler[" + name + "] naming conflicts.");
                 }
 
                 // execute method
+                // 方法合规校验
                 if (!(method.getParameterTypes().length == 1 && method.getParameterTypes()[0].isAssignableFrom(String.class))) {
                     throw new RuntimeException("xxl-job method-jobhandler param-classtype invalid, for[" + bean.getClass() + "#" + method.getName() + "] , " +
                             "The correct method format like \" public ReturnT<String> execute(String param) \" .");
@@ -130,6 +138,7 @@ public class XxlJobSpringExecutor extends XxlJobExecutor implements ApplicationC
                 method.setAccessible(true);
 
                 // init and destory
+                // 获取初始化和销毁方法
                 Method initMethod = null;
                 Method destroyMethod = null;
 
@@ -151,6 +160,7 @@ public class XxlJobSpringExecutor extends XxlJobExecutor implements ApplicationC
                 }
 
                 // registry jobhandler
+                //注册handler
                 registJobHandler(name, new MethodJobHandler(bean, method, initMethod, destroyMethod));
             }
         }

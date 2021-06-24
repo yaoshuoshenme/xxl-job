@@ -26,12 +26,19 @@ public class XxlJobExecutor  {
     private static final Logger logger = LoggerFactory.getLogger(XxlJobExecutor.class);
 
     // ---------------------- param ----------------------
+    // 注册中心地址(这傻逼命名方式)
     private String adminAddresses;
+    // token
     private String accessToken;
+    // 执行器集群名称?
     private String appname;
+    // 地址
     private String address;
+    // ip
     private String ip;
+    // 端口
     private int port;
+
     private String logPath;
     private int logRetentionDays;
 
@@ -65,19 +72,24 @@ public class XxlJobExecutor  {
     public void start() throws Exception {
 
         // init logpath
+        // 日志路径
         XxlJobFileAppender.initLogPath(logPath);
 
         // init invoker, admin-client
+        // todo 初始化注册中心
         initAdminBizList(adminAddresses, accessToken);
 
 
         // init JobLogFileCleanThread
+        // 初始化日志清除线程
         JobLogFileCleanThread.getInstance().start(logRetentionDays);
 
         // init TriggerCallbackThread
+        // 初始化回调线程
         TriggerCallbackThread.getInstance().start();
 
         // init executor-server
+        // 初始化执行器内嵌服务
         initEmbedServer(address, ip, port, appname, accessToken);
     }
     public void destroy(){
@@ -118,6 +130,7 @@ public class XxlJobExecutor  {
             for (String address: adminAddresses.trim().split(",")) {
                 if (address!=null && address.trim().length()>0) {
 
+                    //注册中心
                     AdminBiz adminBiz = new AdminBizClient(address.trim(), accessToken);
 
                     if (adminBizList == null) {
@@ -163,7 +176,9 @@ public class XxlJobExecutor  {
 
 
     // ---------------------- job handler repository ----------------------
+    //job bean注册容器
     private static ConcurrentMap<String, IJobHandler> jobHandlerRepository = new ConcurrentHashMap<String, IJobHandler>();
+
     public static IJobHandler registJobHandler(String name, IJobHandler jobHandler){
         logger.info(">>>>>>>>>>> xxl-job register jobhandler success, name:{}, jobHandler:{}", name, jobHandler);
         return jobHandlerRepository.put(name, jobHandler);
