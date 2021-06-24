@@ -175,12 +175,18 @@ public class XxlJobExecutor  {
 
     // ---------------------- job thread repository ----------------------
     private static ConcurrentMap<Integer, JobThread> jobThreadRepository = new ConcurrentHashMap<Integer, JobThread>();
-    public static JobThread registJobThread(int jobId, IJobHandler handler, String removeOldReason){
+
+
+    public static JobThread registJobThread(int jobId, IJobHandler handler, String removeOldReason) {
+        //初始化新的任务线程
         JobThread newJobThread = new JobThread(jobId, handler);
         newJobThread.start();
-        logger.info(">>>>>>>>>>> xxl-job regist JobThread success, jobId:{}, handler:{}", new Object[]{jobId, handler});
+        logger.info(">>>>>>>>>>> xxl-job regist JobThread success, jobId:{}, handler:{}", new Object[] {jobId, handler});
 
-        JobThread oldJobThread = jobThreadRepository.put(jobId, newJobThread);	// putIfAbsent | oh my god, map's put method return the old value!!!
+        //放缓存
+        // jobID -> jobThread
+        JobThread oldJobThread =
+                jobThreadRepository.put(jobId, newJobThread);    // putIfAbsent | oh my god, map's put method return the old value!!!
         if (oldJobThread != null) {
             oldJobThread.toStop(removeOldReason);
             oldJobThread.interrupt();
@@ -198,7 +204,8 @@ public class XxlJobExecutor  {
         }
         return null;
     }
-    public static JobThread loadJobThread(int jobId){
+    public static JobThread loadJobThread(int jobId) {
+        //
         JobThread jobThread = jobThreadRepository.get(jobId);
         return jobThread;
     }
