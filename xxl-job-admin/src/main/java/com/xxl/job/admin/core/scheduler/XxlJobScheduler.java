@@ -38,7 +38,7 @@ public class XxlJobScheduler  {
         JobLosedMonitorHelper.getInstance().start();
 
         // admin trigger pool start
-        // 启动触发器线程池
+        // 初始化调度器线程池
         JobTriggerPoolHelper.toStart();
 
         // admin log report start
@@ -83,8 +83,11 @@ public class XxlJobScheduler  {
         }
     }
 
+
     // ---------------------- executor-client ----------------------
+    // 执行器客户端缓存
     private static ConcurrentMap<String, ExecutorBiz> executorBizRepository = new ConcurrentHashMap<String, ExecutorBiz>();
+
     public static ExecutorBiz getExecutorBiz(String address) throws Exception {
         // valid
         if (address==null || address.trim().length()==0) {
