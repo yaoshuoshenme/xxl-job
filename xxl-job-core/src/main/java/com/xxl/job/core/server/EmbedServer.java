@@ -23,6 +23,9 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.*;
 
 /**
+ * 内嵌的RPC服务器
+ * 1. 调度器发起调度时，通过http请求这个服务器
+ * <p>
  * Copy from : https://github.com/xuxueli/xxl-rpc
  *
  * @author xuxueli 2020-04-11 21:25
@@ -43,6 +46,7 @@ public class EmbedServer {
                 // param
                 EventLoopGroup bossGroup = new NioEventLoopGroup();
                 EventLoopGroup workerGroup = new NioEventLoopGroup();
+                // 业务线程池
                 ThreadPoolExecutor bizThreadPool = new ThreadPoolExecutor(
                         0,
                         200,
@@ -65,6 +69,7 @@ public class EmbedServer {
 
                 try {
                     // start server
+                    //启动服务器
                     ServerBootstrap bootstrap = new ServerBootstrap();
                     bootstrap.group(bossGroup, workerGroup)
                             .channel(NioServerSocketChannel.class)
@@ -86,9 +91,11 @@ public class EmbedServer {
                     logger.info(">>>>>>>>>>> xxl-job remoting server start success, nettype = {}, port = {}", EmbedServer.class, port);
 
                     // start registry
+                    // 开启注册线程, 把当前执行器的信息注册到注册表里
                     startRegistry(appname, address);
 
                     // wait util stop
+                    // 阻塞
                     future.channel().closeFuture().sync();
 
                 } catch (InterruptedException e) {
@@ -111,6 +118,7 @@ public class EmbedServer {
 
         });
         thread.setDaemon(true);	// daemon, service jvm, user thread leave >>> daemon leave >>> jvm leave
+        //启动rpc服务器线程
         thread.start();
     }
 
@@ -159,13 +167,16 @@ public class EmbedServer {
             String accessTokenReq = msg.headers().get(XxlJobRemotingUtil.XXL_JOB_ACCESS_TOKEN);
 
             // invoke
+            // 调度触发执行
             bizThreadPool.execute(new Runnable() {
                 @Override
                 public void run() {
                     // do invoke
+                    // 触发执行器
                     Object responseObj = process(httpMethod, uri, requestData, accessTokenReq);
 
                     // to json
+                    // 回调执行结果
                     String responseJson = GsonTool.toJson(responseObj);
 
                     // write response
@@ -174,29 +185,43 @@ public class EmbedServer {
             });
         }
 
+
+        /**
+         * 处理
+         *
+         * @param httpMethod
+         * @param uri
+         * @param requestData
+         * @param accessTokenReq
+         * @return
+         */
         private Object process(HttpMethod httpMethod, String uri, String requestData, String accessTokenReq) {
 
             // valid
             if (HttpMethod.POST != httpMethod) {
                 return new ReturnT<String>(ReturnT.FAIL_CODE, "invalid request, HttpMethod not support.");
             }
-            if (uri==null || uri.trim().length()==0) {
+            if (uri == null || uri.trim().length() == 0) {
                 return new ReturnT<String>(ReturnT.FAIL_CODE, "invalid request, uri-mapping empty.");
             }
-            if (accessToken!=null
+            if (accessToken != null
                     && accessToken.trim().length()>0
                     && !accessToken.equals(accessTokenReq)) {
                 return new ReturnT<String>(ReturnT.FAIL_CODE, "The access token is wrong.");
             }
 
             // services mapping
+            // 根据路径调用执行器执行对应逻辑 ===> ExecutorBizImpl
             try {
                 if ("/beat".equals(uri)) {
                     return executorBiz.beat();
                 } else if ("/idleBeat".equals(uri)) {
                     IdleBeatParam idleBeatParam = GsonTool.fromJson(requestData, IdleBeatParam.class);
+                    //是否忙碌
+                    //判断线程队列是否为空以及线程是否在运行
                     return executorBiz.idleBeat(idleBeatParam);
                 } else if ("/run".equals(uri)) {
+                    //执行任务
                     TriggerParam triggerParam = GsonTool.fromJson(requestData, TriggerParam.class);
                     return executorBiz.run(triggerParam);
                 } else if ("/kill".equals(uri)) {
@@ -254,6 +279,7 @@ public class EmbedServer {
 
     public void startRegistry(final String appname, final String address) {
         // start registry
+
         ExecutorRegistryThread.getInstance().start(appname, address);
     }
 

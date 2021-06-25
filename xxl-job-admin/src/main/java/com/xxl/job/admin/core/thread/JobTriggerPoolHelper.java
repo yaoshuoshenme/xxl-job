@@ -62,7 +62,9 @@ public class JobTriggerPoolHelper {
 
 
     // job timeout count
+    // 当前时间分钟值
     private volatile long minTim = System.currentTimeMillis()/60000;     // ms > min
+
     private volatile ConcurrentMap<Integer, AtomicInteger> jobTimeoutCountMap = new ConcurrentHashMap<>();
 
 
@@ -79,6 +81,7 @@ public class JobTriggerPoolHelper {
         // choose thread pool
         ThreadPoolExecutor triggerPool_ = fastTriggerPool;
         AtomicInteger jobTimeoutCount = jobTimeoutCountMap.get(jobId);
+        // 如果1分钟内超时(大于500ms)10次以上用慢线程池, fast与slow线程池没有本质区别，slow的阻塞队列容量更大
         if (jobTimeoutCount!=null && jobTimeoutCount.get() > 10) {      // job-timeout 10 times in 1 min
             triggerPool_ = slowTriggerPool;
         }
@@ -92,21 +95,28 @@ public class JobTriggerPoolHelper {
 
                 try {
                     // do trigger
+                    // 调度
                     XxlJobTrigger.trigger(jobId, triggerType, failRetryCount, executorShardingParam, executorParam, addressList);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 } finally {
 
                     // check timeout-count-map
-                    long minTim_now = System.currentTimeMillis()/60000;
+                    // 处理完成分钟值
+                    long minTim_now = System.currentTimeMillis() / 60000; //当前分钟
+
+                    // 不相同代表超过1分钟的范围，计数清空
+                    // 实现太简单，为什么不用滑动窗口实现?
                     if (minTim != minTim_now) {
                         minTim = minTim_now;
                         jobTimeoutCountMap.clear();
                     }
 
                     // incr timeout-count-map
-                    long cost = System.currentTimeMillis()-start;
+                    // 任务超时计数
+                    long cost = System.currentTimeMillis() - start;
                     if (cost > 500) {       // ob-timeout threshold 500ms
+                        // 记录执行超时次数
                         AtomicInteger timeoutCount = jobTimeoutCountMap.putIfAbsent(jobId, new AtomicInteger(1));
                         if (timeoutCount != null) {
                             timeoutCount.incrementAndGet();

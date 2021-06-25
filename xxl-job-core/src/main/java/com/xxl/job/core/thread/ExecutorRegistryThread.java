@@ -11,17 +11,21 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 执行器注册线程
  * Created by xuxueli on 17/3/2.
  */
 public class ExecutorRegistryThread {
     private static Logger logger = LoggerFactory.getLogger(ExecutorRegistryThread.class);
 
+    //单例
     private static ExecutorRegistryThread instance = new ExecutorRegistryThread();
     public static ExecutorRegistryThread getInstance(){
         return instance;
     }
 
+    // 注册线程
     private Thread registryThread;
+    // 停止信号
     private volatile boolean toStop = false;
     public void start(final String appname, final String address){
 
@@ -42,16 +46,23 @@ public class ExecutorRegistryThread {
                 // registry
                 while (!toStop) {
                     try {
+                        //组装注册参数
+                        // appName 执行器集群名称（可以理解为命名空间或分组名）
+                        // address 执行器地址
                         RegistryParam registryParam = new RegistryParam(RegistryConfig.RegistType.EXECUTOR.name(), appname, address);
-                        for (AdminBiz adminBiz: XxlJobExecutor.getAdminBizList()) {
+                        //获取注册中心地址
+                        for (AdminBiz adminBiz : XxlJobExecutor.getAdminBizList()) {
                             try {
+                                //通过http请求发起注册
                                 ReturnT<String> registryResult = adminBiz.registry(registryParam);
-                                if (registryResult!=null && ReturnT.SUCCESS_CODE == registryResult.getCode()) {
+                                if (registryResult != null && ReturnT.SUCCESS_CODE == registryResult.getCode()) {
                                     registryResult = ReturnT.SUCCESS;
-                                    logger.debug(">>>>>>>>>>> xxl-job registry success, registryParam:{}, registryResult:{}", new Object[]{registryParam, registryResult});
+                                    logger.debug(">>>>>>>>>>> xxl-job registry success, registryParam:{}, registryResult:{}",
+                                            new Object[] {registryParam, registryResult});
                                     break;
                                 } else {
-                                    logger.info(">>>>>>>>>>> xxl-job registry fail, registryParam:{}, registryResult:{}", new Object[]{registryParam, registryResult});
+                                    logger.info(">>>>>>>>>>> xxl-job registry fail, registryParam:{}, registryResult:{}",
+                                            new Object[] {registryParam, registryResult});
                                 }
                             } catch (Exception e) {
                                 logger.info(">>>>>>>>>>> xxl-job registry error, registryParam:{}", registryParam, e);
@@ -67,6 +78,7 @@ public class ExecutorRegistryThread {
 
                     try {
                         if (!toStop) {
+                            // 心跳间隔
                             TimeUnit.SECONDS.sleep(RegistryConfig.BEAT_TIMEOUT);
                         }
                     } catch (InterruptedException e) {
@@ -77,10 +89,13 @@ public class ExecutorRegistryThread {
                 }
 
                 // registry remove
+                // 注册摘除
                 try {
+                    //参数
                     RegistryParam registryParam = new RegistryParam(RegistryConfig.RegistType.EXECUTOR.name(), appname, address);
                     for (AdminBiz adminBiz: XxlJobExecutor.getAdminBizList()) {
                         try {
+                            //摘除
                             ReturnT<String> registryResult = adminBiz.registryRemove(registryParam);
                             if (registryResult!=null && ReturnT.SUCCESS_CODE == registryResult.getCode()) {
                                 registryResult = ReturnT.SUCCESS;
@@ -106,6 +121,7 @@ public class ExecutorRegistryThread {
 
             }
         });
+        // 守护线程
         registryThread.setDaemon(true);
         registryThread.setName("xxl-job, executor ExecutorRegistryThread");
         registryThread.start();
