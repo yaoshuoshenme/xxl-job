@@ -65,19 +65,24 @@ public class XxlJobExecutor  {
     public void start() throws Exception {
 
         // init logpath
+        // 初始化日志组件
         XxlJobFileAppender.initLogPath(logPath);
 
         // init invoker, admin-client
+        // 初始化注册中心地址列表
         initAdminBizList(adminAddresses, accessToken);
 
 
         // init JobLogFileCleanThread
+        // 启动日志清除线程
         JobLogFileCleanThread.getInstance().start(logRetentionDays);
 
         // init TriggerCallbackThread
+        // 启动任务回调线程
         TriggerCallbackThread.getInstance().start();
 
         // init executor-server
+        // 启动netty服务器
         initEmbedServer(address, ip, port, appname, accessToken);
     }
     public void destroy(){

@@ -246,4 +246,20 @@ public class JobThread extends Thread{
 
 		logger.info(">>>>>>>>>>> xxl-job JobThread stoped, hashCode:{}", Thread.currentThread());
 	}
+
+
+	public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
+		int timeout = 1;
+		FutureTask<String> futureTask = new FutureTask<>(new Callable<String>() {
+			@Override
+			public String call() throws Exception {
+				//redis get
+				return null;
+			}
+		});
+		String val = futureTask.get(timeout, TimeUnit.SECONDS);
+		if (val == null) {
+			// get from db
+		}
+	}
 }
